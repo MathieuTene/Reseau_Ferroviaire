@@ -6,10 +6,12 @@ import java.util.List;
 public class Reseau {
     private List<Noeud> noeuds;
     private List<Segment> segments;
+    private List<Train> trains;
 
     public Reseau() {
         this.noeuds = new ArrayList<>();
         this.segments = new ArrayList<>();
+        this.trains = new ArrayList<>();
     }
 
     public void ajouterNoeud(Noeud n) {
@@ -20,6 +22,10 @@ public class Reseau {
         segments.add(s);
     }
 
+    public void ajouterTrain(Train t) {
+        trains.add(t);
+    }
+
     public List<Noeud> getNoeuds() {
         return noeuds;
     }
@@ -28,8 +34,12 @@ public class Reseau {
         return segments;
     }
 
+    public List<Train> getTrains() {
+        return trains;
+    }
+
     @Override
     public String toString() {
-        return "Votre réseau contient :\n" + segments.size() + " segments et " + noeuds.size() + " noeuds";
+        return "Votre réseau contient :\n" + segments.size() + " segment(s) " + noeuds.size() + " noeud(s) et " + trains.size() + " train(s)";
     }
 }
