@@ -7,65 +7,83 @@ public class Train {
     private Segment segmentCourant;
     private double s;
     private int indexSegment;
+    private double tempsDepart;
+    private double tempsCumule = 0;
 
     public Train(String id, double vitesse, Itineraire itineraire) {
+        this(id, vitesse, itineraire, 0.0);
+    }
+
+    public Train(String id, double vitesse, Itineraire itineraire, double tempsDepart) {
         this.id = id;
         this.vitesse = vitesse;
         this.itineraire = itineraire;
+        this.tempsDepart = tempsDepart;
         this.s = 0.0;
         this.indexSegment = 0;
         
         if (itineraire != null && !itineraire.getSegments().isEmpty()) {
-            Segment first = itineraire.getSegments().get(0);
-            if (first.reserver(id)) {
-                this.segmentCourant = first;
-            } else {
-                // Si on ne peut pas réserver le premier segment, le train attend au début
-                this.segmentCourant = first;
-                this.vitesse = 0; // On pourrait gérer ça autrement, mais pour l'instant...
-            }
+            this.segmentCourant = itineraire.getSegments().get(0);
+            // On tente de réserver le premier segment dès le départ
+            this.segmentCourant.reserver(id);
         }
     }
 
     public void avancer(double dt) {
+        tempsCumule += dt;
+        if (tempsCumule < tempsDepart) {
+            return; // Le train n'est pas encore parti
+        }
+
         if (estTermine()) {
             return;
         }
 
-        // Si le train était arrêté car bloqué, on réessaie d'avancer s'il a de la vitesse
-        // Dans ce modèle simplifié, la vitesse est fixe.
-        
+        // Si le train est bloqué en bout de segment (s == longueur), 
+        // on tente de passer au suivant avant d'ajouter le mouvement du tick actuel
+        if (s >= segmentCourant.longueur()) {
+            tenterPassageSuivant(0);
+        }
+
+        if (estTermine() || s >= segmentCourant.longueur()) {
+            return; // Toujours bloqué ou fini
+        }
+
         s += vitesse * dt;
 
+        // Algorithme Page 5 : "Lorsque s dépasse L = longueur(segmentCourant)"
         while (segmentCourant != null && s >= segmentCourant.longueur()) {
             double reste = s - segmentCourant.longueur();
-            
-            // Tentative de passage au segment suivant
-            int nextIndex = indexSegment + 1;
-            if (nextIndex < itineraire.getSegments().size()) {
-                Segment suivant = itineraire.getSegments().get(nextIndex);
-                
-                if (suivant.reserver(id)) {
-                    // Libération de l'ancien segment
-                    segmentCourant.liberer(id);
-                    
-                    // Passage au suivant
-                    segmentCourant = suivant;
-                    indexSegment = nextIndex;
-                    s = reste;
-                    // On continue la boucle pour voir si on dépasse aussi le suivant
-                } else {
-                    // Bloqué ! On s'arrête pile à la fin du segment actuel
-                    s = segmentCourant.longueur();
-                    break; 
-                }
-            } else {
-                // Fin de l'itinéraire
-                segmentCourant.liberer(id);
-                segmentCourant = null;
-                s = 0.0;
-                break;
+            if (!tenterPassageSuivant(reste)) {
+                break; // Bloqué, on sort de la boucle
             }
+        }
+    }
+
+    private boolean tenterPassageSuivant(double reste) {
+        int nextIndex = indexSegment + 1;
+        if (nextIndex < itineraire.getSegments().size()) {
+            Segment suivant = itineraire.getSegments().get(nextIndex);
+            
+            // 3. on tente de réserver le segment suivant
+            if (suivant.reserver(id)) {
+                // si OK libérer l'ancien segment
+                segmentCourant.liberer(id);
+                segmentCourant = suivant;
+                indexSegment = nextIndex;
+                s = reste;
+                return true; // continuer (boucle)
+            } else {
+                // si pas ok : s = L (on s'arrête pile à la fin)
+                s = segmentCourant.longueur();
+                return false; // sort (train en attente)
+            }
+        } else {
+            // Fin de l'itinéraire
+            segmentCourant.liberer(id);
+            segmentCourant = null;
+            s = 0.0;
+            return false;
         }
     }
 
