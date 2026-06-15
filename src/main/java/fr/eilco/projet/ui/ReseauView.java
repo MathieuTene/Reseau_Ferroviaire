@@ -44,14 +44,29 @@ public class ReseauView extends Pane {
 
         locoImg = loadImageOrNull("/images/loco.png");
         railImg = loadImageOrNull("/images/rail_transparent.png");
+
+        if (locoImg == null) System.err.println("[DEBUG] Échec chargement loco.png");
+        else System.out.println("[DEBUG] loco.png chargé: " + locoImg.getWidth() + "x" + locoImg.getHeight());
+
+        if (railImg == null) System.err.println("[DEBUG] Échec chargement rail_transparent.png");
+        else System.out.println("[DEBUG] rail_transparent.png chargé: " + railImg.getWidth() + "x" + railImg.getHeight());
+    }
+
+    public void setReseau(Reseau reseau) {
+        this.reseau = reseau;
+        redraw();
     }
 
     private Image loadImageOrNull(String path) {
         try {
             var is = getClass().getResourceAsStream(path);
-            if (is == null) return null;
+            if (is == null) {
+                System.err.println("[DEBUG] Ressource non trouvée: " + path);
+                return null;
+            }
             return new Image(is);
         } catch (Exception e) {
+            System.err.println("[DEBUG] Erreur lors du chargement de " + path + ": " + e.getMessage());
             return null;
         }
     }
@@ -97,27 +112,32 @@ public class ReseauView extends Pane {
         Noeud n1 = s.getA();
         Noeud n2 = s.getB();
         
+        double dist = s.longueur();
+        double dx = n2.getX() - n1.getX();
+        double dy = n2.getY() - n1.getY();
+        double angle = Math.toDegrees(Math.atan2(dy, dx));
+
+        // 1. On dessine toujours une ligne grise épaisse pour garantir la continuité visuelle
+        g.setStroke(Color.web("#333333")); // Gris très foncé
+        g.setLineWidth(8);
+        g.strokeLine(n1.getX(), n1.getY(), n2.getX(), n2.getY());
+
         if (railImg != null) {
-            // Dessin avec sprite répété (V3)
-            double dist = s.longueur();
-            double dx = n2.getX() - n1.getX();
-            double dy = n2.getY() - n1.getY();
-            double angle = Math.toDegrees(Math.atan2(dy, dx));
-            
             g.save();
             g.translate(n1.getX(), n1.getY());
             g.rotate(angle);
             
-            double railW = 20; // à ajuster
-            double railH = 10;
-            for (double x = 0; x < dist; x += railW) {
-                g.drawImage(railImg, x, -railH/2, railW, railH);
+            // On utilise une hauteur très importante pour compenser le vide dans l'image
+            double railH = 120; 
+            double step = 40;    // On avance de 40px à chaque pas
+            double sliceW = 80;  // Mais on dessine sur 80px pour créer un recouvrement (overlap)
+            
+            // On boucle sur la longueur du segment pour créer une ligne continue sans trous
+            for (double x = -20; x < dist; x += step) {
+                g.drawImage(railImg, x, -railH/2, sliceW, railH);
             }
+            
             g.restore();
-        } else {
-            g.setStroke(Color.GRAY);
-            g.setLineWidth(3);
-            g.strokeLine(n1.getX(), n1.getY(), n2.getX(), n2.getY());
         }
         
         // Afficher qui réserve le segment (pour le débug)
@@ -146,7 +166,9 @@ public class ReseauView extends Pane {
             g.translate(x, y);
             g.rotate(angle);
             
-            double scale = 0.25;
+            // NOUVELLE AUGMENTATION DE L'ÉCHELLE DU TRAIN
+            // On passe de 0.08 à 0.16 pour une visibilité maximale
+            double scale = 0.16; 
             double w = locoImg.getWidth() * scale;
             double h = locoImg.getHeight() * scale;
             g.drawImage(locoImg, -w/2, -h/2, w, h);

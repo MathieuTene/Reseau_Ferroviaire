@@ -6,7 +6,9 @@ import fr.eilco.projet.ui.ReseauView;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 import java.util.List;
@@ -26,6 +28,26 @@ public class MainApp extends Application {
         BorderPane root = new BorderPane();
         root.setCenter(view);
 
+        // Barre d'outils
+        HBox toolbar = new HBox(10);
+        toolbar.setStyle("-fx-padding: 10; -fx-background-color: #eee;");
+        
+        Button btnPause = new Button("Pause");
+        btnPause.setOnAction(e -> {
+            engine.setPaused(!engine.isPaused());
+            btnPause.setText(engine.isPaused() ? "Reprendre" : "Pause");
+        });
+
+        Button btnReset = new Button("Réinitialiser");
+        btnReset.setOnAction(e -> {
+            initModel();
+            view.setReseau(reseau); // Mettre à jour la vue avec le nouveau réseau
+            btnPause.setText("Pause");
+        });
+
+        toolbar.getChildren().addAll(btnPause, btnReset);
+        root.setTop(toolbar);
+
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -42,7 +64,7 @@ public class MainApp extends Application {
         };
         timer.start();
 
-        Scene scene = new Scene(root, 1000, 700);
+        Scene scene = new Scene(root, 1000, 750);
         stage.setTitle("Simulateur de Réseau Ferroviaire - Séance 3");
         stage.setScene(scene);
         stage.show();

@@ -81,16 +81,16 @@ public class TestSimulationEngine {
         Train train = new Train("t1", 90.0, itineraire);
         reseau.ajouterTrain(train);
 
-        System.out.println(reseau);
+        // System.out.println(reseau);
 
-        simulationEngine.step(1.0);
-        System.out.println(train);
-        simulationEngine.step(1.0);
-        System.out.println(train);
-        simulationEngine.step(1.0);
-        System.out.println(train);
-        simulationEngine.step(1.0);
-        System.out.println(train);
+        // simulationEngine.step(1.0);
+        // System.out.println(train);
+        // simulationEngine.step(1.0);
+        // System.out.println(train);
+        // simulationEngine.step(1.0);
+        // System.out.println(train);
+        // simulationEngine.step(1.0);
+        // System.out.println(train);
         
         System.out.println("\nTest de plusieurs trains :");
         Train train2 = new Train("t2", 100.0, new Itineraire(List.of(s2, s1)));
